@@ -54,3 +54,6 @@ Thumbs.db
 *.onnx
 **/config/backup_config.yaml
 **/config/go2rtc_homekit.yml
+
+# wazuh: dashboard API credentials file (tracked as wazuh.yml.example)
+**/wazuh_dashboard/wazuh.yml
