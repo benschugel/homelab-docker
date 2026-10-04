@@ -1,3 +1,9 @@
+# Frigate NVR with a custom TensorRT image. Run from this folder.
+# Project name pinned so the network name stays stable if this folder moves.
+# config/ is a bind mount: config.yml is tracked, everything else Frigate writes there is gitignored.
+
+name: frigate
+
 services:
   frigate:
     container_name: frigate
