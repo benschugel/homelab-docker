@@ -29,3 +29,15 @@ secrets.yaml
 .DS_Store
 Thumbs.db
 !*.env.example
+
+# frigate runtime
+**/model_cache/
+.jwt_secret
+.runtime_state*
+.search_stats*
+.exports
+.vacuum
+*.lock
+*.bak
+*.db-shm
+*.db-wal
