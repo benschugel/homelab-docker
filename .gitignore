@@ -41,3 +41,7 @@ Thumbs.db
 *.bak
 *.db-shm
 *.db-wal
+
+# tokens
+*token*.txt
+*.token
