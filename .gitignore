@@ -1,0 +1,30 @@
+﻿# secrets and env
+.env
+*.env
+!.env.example
+secrets.yml
+secrets.yaml
+
+# certs and keys
+*.pem
+*.key
+*.crt
+*.p12
+*.pfx
+**/wazuh_indexer_ssl_certs/
+**/internal_users.yml
+
+# runtime data
+**/data/
+**/db/
+**/media/
+**/export/
+**/consume/
+**/storage/
+**/recordings/
+*.db
+*.sqlite
+
+# misc
+.DS_Store
+Thumbs.db
