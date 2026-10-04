@@ -1,0 +1,30 @@
+<group name="local,tuning,">
+
+  <rule id="100200" level="0">
+    <if_sid>60011</if_sid>
+    <field name="win.system.eventID">^3033$</field>
+    <field name="win.eventdata.processNameBuffer" type="pcre2">(?i)chrome\.exe$</field>
+    <field name="win.eventdata.fileNameBuffer" type="pcre2">(?i)libLiteRtWebGpuAccelerator\.dll$</field>
+    <description>Chrome LiteRT DLL signing-level failure (benign)</description>
+  </rule>
+
+  <rule id="100201" level="0">
+    <if_sid>92031,92039</if_sid>
+    <field name="win.eventdata.currentDirectory" type="pcre2">(?i)ossec-agent</field>
+    <description>Wazuh agent SCA running net.exe (benign)</description>
+  </rule>
+
+  <rule id="100202" level="0">
+    <if_sid>92058</if_sid>
+    <field name="win.eventdata.parentCommandLine" type="pcre2">(?i)-s PcaSvc$</field>
+    <field name="win.eventdata.commandLine" type="pcre2">(?i)sdbinst\.exe -m -bg$</field>
+    <description>Hourly PcaSvc shim refresh (benign)</description>
+  </rule>
+
+  <rule id="100203" level="3">
+    <if_sid>92213</if_sid>
+    <field name="win.eventdata.targetFilename" type="pcre2">(?i)__PSScriptPolicyTest_.{12}\.ps1$|uv-trampoline-\d+\.exe$</field>
+    <description>Known-benign temp file: PowerShell policy probe or uv trampoline</description>
+  </rule>
+
+</group>

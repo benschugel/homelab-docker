@@ -1,0 +1,36 @@
+<group name="unifi,">
+
+  <rule id="100100" level="3">
+    <decoded_as>unifi-cef</decoded_as>
+    <description>UniFi: $(unifi.event_name)</description>
+  </rule>
+
+  <rule id="100101" level="5">
+    <if_sid>100100</if_sid>
+    <field name="unifi.event_name">Blocked by Firewall</field>
+    <description>UniFi firewall block: $(srcip) ($(unifi.src_zone)) to $(unifi.dst_zone) port $(dstport), policy $(unifi.policy)</description>
+    <group>firewall,</group>
+  </rule>
+
+  <rule id="100102" level="10">
+    <if_sid>100100</if_sid>
+    <field name="unifi.event_name">Honeypot</field>
+    <description>UniFi honeypot triggered by $(unifi.client_alias) ($(srcmac))</description>
+    <group>attack,honeypot,</group>
+  </rule>
+
+  <rule id="100103" level="10">
+    <if_sid>100100</if_sid>
+    <field name="unifi.event_name">Threat Detected</field>
+    <description>UniFi IPS: $(unifi.msg)</description>
+    <group>ids,</group>
+  </rule>
+
+  <rule id="100104" level="12" frequency="8" timeframe="60">
+    <if_matched_sid>100101</if_matched_sid>
+    <same_srcip />
+    <description>UniFi: 8+ firewall blocks from $(srcip) in 60s, possible scan</description>
+    <group>recon,</group>
+  </rule>
+
+</group>
