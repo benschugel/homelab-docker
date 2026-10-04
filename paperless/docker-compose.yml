@@ -1,6 +1,9 @@
-# Paperless-ngx on Docker Desktop (Windows), intended for C:\paperless
+# Paperless-ngx on Docker Desktop (Windows). Run from this folder.
 # Data lives in named volumes (Postgres is unreliable on Windows bind mounts).
-# consume\ and export\ are bind mounts so you can see them in Explorer.
+# consume\ and export\ are bind mounts (gitignored) so you can see them in Explorer.
+# The project name is pinned so the volumes stay attached if this folder ever moves.
+
+name: paperless
 
 services:
   broker:
