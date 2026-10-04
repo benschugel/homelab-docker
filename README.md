@@ -1,6 +1,8 @@
 # homelab-docker
 
-Docker Compose stacks running on my Windows desktop (Docker Desktop). Secrets live in per-stack .env files that are gitignored; each folder has a .env.example showing what's required.
+Docker Compose stacks running on my Windows desktop (Docker Desktop). This repo is the live working directory, not a copy: each stack runs from its folder here, with its Compose project name pinned so volumes and networks survive moves.
+
+Secrets and generated state stay local and gitignored; every stack ships a `.env.example` (and, where needed, other `*.example` files) showing what to fill in. See each stack's README for details.
 
 | Stack | What it does |
 |---|---|
