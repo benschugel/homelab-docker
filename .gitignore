@@ -45,3 +45,7 @@ Thumbs.db
 # tokens
 *token*.txt
 *.token
+
+# per-stack local state (DPAPI-protected secrets, logs)
+*.dpapi.xml
+*.log
