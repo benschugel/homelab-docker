@@ -1,0 +1,304 @@
+mqtt:
+  enabled: true
+  host: 192.168.60.5
+  port: 1883
+  user: frigatemqtt
+  password: '{FRIGATE_MQTT_PASSWORD}'
+
+tls:
+  enabled: true
+
+ffmpeg:
+  hwaccel_args: preset-nvidia
+
+go2rtc:
+  rtsp:
+    username: '{FRIGATE_RTSP_USER}'
+    password: '{FRIGATE_RTSP_PASSWORD}'
+  webrtc:
+    candidates:
+      - 192.168.10.10:8555
+      - stun:8555
+  streams:
+    driveway:
+      - rtsp://frigate:{FRIGATE_DRIVEWAY_PASSWORD}@192.168.30.12:554/Preview_01_main#media=video
+      - ffmpeg:driveway_sub#audio=aac
+      - ffmpeg:driveway_sub#audio=opus
+    driveway_sub:
+      - rtsp://frigate:{FRIGATE_DRIVEWAY_PASSWORD}@192.168.30.12:554/Preview_01_sub
+    driveway_audio:
+      - ffmpeg:driveway_sub#video=copy#audio=aac
+    litter:
+      - ffmpeg:rtsps://{FRIGATE_LITTER_USER}:{FRIGATE_LITTER_PASSWORD}@192.168.30.137:322/stream0#video=copy#audio=aac
+
+cameras:
+  driveway:
+    enabled: true
+    ffmpeg:
+      output_args:
+        record: preset-record-generic
+      inputs:
+        - path: 
+            rtsp://{FRIGATE_RTSP_USER}:{FRIGATE_RTSP_PASSWORD}@127.0.0.1:8554/driveway
+          roles:
+            - detect
+            - record
+            - audio
+          input_args: preset-rtsp-restream
+    detect:
+      width: 1280
+      height: 720
+      fps: 5
+    mqtt:
+      timestamp: true
+      bounding_box: true
+      crop: false
+      height: 720
+      quality: 90
+    review: {}
+    audio_transcription:
+      enabled: true
+    zones:
+      driveway_zone:
+        coordinates: 
+          0,0.617,0,1,0.651,1,0.702,0.753,0.737,0.513,0.755,0.267,0.756,0.188,0.748,0.135,0.73,0.107,0.714,0.085,0.692,0.057,0.65,0.044,0.588,0.071,0.541,0.123,0.477,0.169,0.422,0.215,0.347,0.278,0.21,0.385,0.088,0.508
+        enabled: true
+        inertia: 3
+        loitering_time: 0
+        friendly_name: Driveway_Zone
+      front_yard:
+        coordinates: 
+          0,0.617,0,1,0.86,1,0.886,0.794,0.888,0.624,0.877,0.462,0.381,0.249,0.2,0.394,0.08,0.519
+        enabled: true
+        inertia: 3
+        loitering_time: 0
+        friendly_name: Front_Yard
+  driveway_audio:
+    enabled: true
+    ui:
+      dashboard: false
+    birdseye:
+      enabled: false
+    ffmpeg:
+      output_args:
+        record: preset-record-generic-audio-copy
+      inputs:
+        - path: 
+            rtsp://{FRIGATE_RTSP_USER}:{FRIGATE_RTSP_PASSWORD}@127.0.0.1:8554/driveway_audio
+          roles:
+            - detect
+            - record
+          input_args: preset-rtsp-restream
+    detect:
+      enabled: false
+      width: 640
+      height: 360
+      fps: 1
+    audio:
+      enabled: false
+    audio_transcription:
+      enabled: true
+    face_recognition:
+      enabled: false
+    lpr:
+      enabled: false
+  litter:
+    enabled: true
+    ffmpeg:
+      inputs:
+        - path: 
+            rtsp://{FRIGATE_RTSP_USER}:{FRIGATE_RTSP_PASSWORD}@127.0.0.1:8554/litter
+          roles:
+            - detect
+            - record
+            - audio
+          input_args: preset-rtsp-restream
+    detect:
+      width: 1280
+      height: 720
+      fps: 5
+    mqtt:
+      timestamp: true
+      bounding_box: true
+      crop: false
+      height: 720
+      quality: 90
+    objects:
+      track:
+        - cat
+      filters:
+        cat:
+          threshold: 0.5
+          min_score: 0.3
+    face_recognition:
+      enabled: false
+    audio:
+      enabled: false
+    lpr:
+      enabled: false
+    audio_transcription:
+      enabled: false
+
+    motion:
+      threshold: 30
+      contour_area: 10
+      mask:
+        timestamp:
+          friendly_name: Timestamp
+          enabled: true
+          coordinates: 0.72,0.932,0.72,0.989,0.976,0.985,0.976,0.931
+record:
+  enabled: true
+  alerts:
+    retain:
+      days: 14
+    pre_capture: 15
+    post_capture: 15
+  detections:
+    retain:
+      days: 14
+    pre_capture: 15
+    post_capture: 15
+  continuous:
+    days: 3
+  motion:
+    days: 7
+
+snapshots:
+  enabled: true
+  retain:
+    default: 14
+
+version: 0.18-0
+
+semantic_search:
+  enabled: true
+  model_size: large
+
+lpr:
+  enabled: true
+  min_area: 100
+  debug_save_plates: true
+  known_plates:
+    My Car:
+      - ZXC 927
+      - ZXC927
+  detection_threshold: 0.5
+  recognition_threshold: 0.7
+  match_distance: 2
+  enhancement: 1
+
+classification:
+  bird:
+    enabled: true
+    threshold: 0.7
+  custom:
+    Car in driveway state:
+      enabled: true
+      name: Car in driveway state
+      threshold: 0.8
+      state_config:
+        cameras:
+          driveway:
+            crop:
+              - 0.12610410541653147
+              - 0.002490359023875571
+              - 0.6872032784656015
+              - 1
+        motion: true
+
+detect:
+  enabled: true
+
+motion:
+  threshold: 45
+  contour_area: 20
+
+  lightning_threshold: 0.7
+objects:
+  genai:
+    enabled: true
+  track:
+    - person
+    - bicycle
+    - bird
+    - car
+    - motorcycle
+    - dog
+    - cat
+    - bear
+    - amazon
+    - deer
+    - dhl
+    - fedex
+    - garbage_truck
+    - license_plate
+    - package
+    - usps
+    - ups
+    - waste_bin
+    - face
+    - fox
+    - squirrel
+    - skunk
+    - rodent
+    - raccoon
+    - rabbit
+    - possum
+    - school_bus
+    - boat
+    - bbq_grill
+    - baby_stroller
+    - baby
+  filters:
+    motorcycle:
+      threshold: 0.8
+      min_score: 0.6
+    car:
+      threshold: 0.5
+      min_score: 0.3
+
+face_recognition:
+  enabled: true
+  model_size: large
+
+audio:
+  enabled: true
+  listen:
+    - fire_alarm
+    - yell
+    - alarm
+    - breaking
+    - car_alarm
+    - doorbell
+    - eruption
+    - fart
+    - glass
+    - gunshot
+    - knock
+    - police_car
+    - rumble
+    - shatter
+    - siren
+    - smash
+    - smoke_detector
+    - reversing_beeps
+    - growling
+    - clang
+    - slam
+    - slap
+    - fire_engine
+    - fire
+audio_transcription:
+  enabled: true
+
+ui:
+  unit_system: imperial
+
+detectors:
+  onnx:
+    type: onnx
+    device: Tensorrt
+
+model:
+  path: plus://5fbd40a532cff3b11ee2ceaaba7094a0
