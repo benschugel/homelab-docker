@@ -28,3 +28,4 @@ secrets.yaml
 # misc
 .DS_Store
 Thumbs.db
+!*.env.example

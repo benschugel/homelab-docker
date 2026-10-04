@@ -1,0 +1,55 @@
+# Paperless-ngx on Docker Desktop (Windows), intended for C:\paperless
+# Data lives in named volumes (Postgres is unreliable on Windows bind mounts).
+# consume\ and export\ are bind mounts so you can see them in Explorer.
+
+services:
+  broker:
+    image: docker.io/library/redis:8
+    restart: unless-stopped
+    volumes:
+      - redisdata:/data
+
+  db:
+    image: docker.io/library/postgres:17
+    restart: unless-stopped
+    env_file: paperless.env
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  webserver:
+    image: ghcr.io/paperless-ngx/paperless-ngx:latest
+    restart: unless-stopped
+    depends_on:
+      - db
+      - broker
+      - gotenberg
+      - tika
+    ports:
+      - "8000:8000"
+    env_file: paperless.env
+    volumes:
+      - data:/usr/src/paperless/data
+      - media:/usr/src/paperless/media
+      - ./export:/usr/src/paperless/export
+      - ./consume:/usr/src/paperless/consume
+
+  # Gotenberg + Tika handle Office docs and .eml files.
+  # Remove both (and the TIKA lines in paperless.env) if you only scan PDFs/images.
+  gotenberg:
+    image: docker.io/gotenberg/gotenberg:8
+    restart: unless-stopped
+    command:
+      - "gotenberg"
+      - "--chromium-disable-javascript=true"
+      - "--chromium-allow-list=file:///tmp/.*"
+
+  # Pinned to 3.x: Tika 4.x renamed its metadata keys and breaks Paperless .eml parsing.
+  tika:
+    image: docker.io/apache/tika:3.3.1.0
+    restart: unless-stopped
+
+volumes:
+  data:
+  media:
+  pgdata:
+  redisdata:
