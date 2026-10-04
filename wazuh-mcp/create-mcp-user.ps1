@@ -3,7 +3,8 @@
 $ErrorActionPreference = "Stop"
 $api      = "https://localhost:55000"
 $admin    = "wazuh-wui"
-$adminPw  = "MyS3cr37P450r.*-"
+$adminPw  = $env:WAZUH_API_ADMIN_PASSWORD
+if (-not $adminPw) { throw "Set WAZUH_API_ADMIN_PASSWORD in this shell before running (the wazuh-wui API password)." }
 $newUser  = "mcp-service"
 $newPw    = (Get-Content "$PSScriptRoot\.env" | Where-Object { $_ -like "WAZUH_PASS=*" }) -replace "^WAZUH_PASS=", ""
 

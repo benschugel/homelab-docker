@@ -1,4 +1,4 @@
-﻿# secrets and env
+# secrets and env
 .env
 *.env
 !.env.example
