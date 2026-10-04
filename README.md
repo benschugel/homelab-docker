@@ -1,4 +1,4 @@
-﻿# homelab-docker
+# homelab-docker
 
 Docker Compose stacks running on my Windows desktop (Docker Desktop). Secrets live in per-stack .env files that are gitignored; each folder has a .env.example showing what's required.
 
