@@ -8,7 +8,7 @@ Secrets and generated state stay local and gitignored; every stack ships a `.env
 |---|---|
 | wazuh/ | Wazuh 4.9 single-node SIEM. Includes a custom UniFi syslog decoder and rules, Sysmon tuning rules, a Home Assistant webhook integration, and a Docker event listener. |
 | wazuh-mcp/ | Wazuh MCP server so Claude Code can query alerts and agents. Hardened container: loopback-only, read-only FS, dropped caps, read-only API user. |
-| frigate/ | Frigate NVR with a custom TensorRT build for NVIDIA GPU detection. Camera credentials come from env substitution. |
-| paperless/ | Paperless-ngx with Postgres, Redis, Gotenberg, and Tika for document management. |
+| frigate/ | Frigate NVR with a custom TensorRT build for NVIDIA GPU detection and a Dockerfile that exports YOLOv9 to ONNX. Camera credentials come from env substitution. |
+| paperless/ | Paperless-ngx with Postgres, Redis, Gotenberg, and Tika for document management, plus a nightly encrypted export script for Task Scheduler. |
 
 Not included: TLS certs, internal_users.yml, databases, media, model caches, tokens.
