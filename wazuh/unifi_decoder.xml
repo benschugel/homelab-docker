@@ -1,0 +1,9 @@
+<decoder name="unifi-cef">
+  <program_name>^CEF</program_name>
+</decoder>
+
+<decoder name="unifi-cef-fields">
+  <parent>unifi-cef</parent>
+  <regex type="pcre2">^\s*0\|Ubiquiti\|UniFi Network\|([^|]*)\|(\d+)\|([^|]*)\|(\d+)\|(?:.*?UNIFIcategory=(\S+))?(?:.*?\bproto=(\S+))?(?:.*?\bspt=(\d+))?(?:.*?\bdpt=(\d+))?(?:.*?\bact=(\S+))?(?:.*?UNIFIrisk=(\S+))?(?:.*?UNIFIpolicyName=(.*?) UNIFI)?(?:.*?UNIFI(?:src)?[cC]lientAlias=(.*?) UNIFI)?(?:.*?UNIFIsrcClientIp=(\S+))?(?:.*?UNIFI(?:src)?[cC]lientMac=(\S+))?(?:.*?UNIFIsrcZone=(\S+))?(?:.*?UNIFIdstZone=(\S+))?(?:.*?\bmsg=(.*))?$</regex>
+  <order>unifi.version, unifi.event_id, unifi.event_name, unifi.severity, unifi.category, protocol, srcport, dstport, action, unifi.risk, unifi.policy, unifi.client_alias, srcip, srcmac, unifi.src_zone, unifi.dst_zone, unifi.msg</order>
+</decoder>
