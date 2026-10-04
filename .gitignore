@@ -49,3 +49,8 @@ Thumbs.db
 # per-stack local state (DPAPI-protected secrets, logs)
 *.dpapi.xml
 *.log
+
+# frigate: models and Frigate-written config copies (backup_config.yaml holds plaintext credentials)
+*.onnx
+**/config/backup_config.yaml
+**/config/go2rtc_homekit.yml
