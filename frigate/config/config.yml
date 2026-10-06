@@ -73,6 +73,15 @@ cameras:
         inertia: 3
         loitering_time: 0
         friendly_name: Front_Yard
+    objects:
+      filters:
+        rabbit:
+          min_area: 0.0015
+          min_ratio: 0.6
+          max_ratio: 1.8
+          threshold: 0.82
+          min_score: 0.6
+          max_area: 0.1
   driveway_audio:
     enabled: true
     ui:
