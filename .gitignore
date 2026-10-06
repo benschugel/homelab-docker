@@ -57,3 +57,8 @@ Thumbs.db
 
 # wazuh: dashboard API credentials file (tracked as wazuh.yml.example)
 **/wazuh_dashboard/wazuh.yml
+
+# local backups, never commit
+*-backup-*/
+*.tgz
+*.tar.gz
