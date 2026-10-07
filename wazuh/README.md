@@ -6,7 +6,7 @@ Wazuh 4.9.2 SIEM (manager, indexer, dashboard) on Docker Desktop for Windows. St
 
 - `unifi_decoder.xml`, `unifi_rules.xml`: decoder and rules for UniFi gateway syslog.
 - `local_tuning_rules.xml`: noise reduction and overrides for Sysmon and the home LAN.
-- `custom-homeassistant.py`: integration script that forwards alerts at or above a level threshold to a Home Assistant webhook (see the header comment for the `<integration>` block).
+- `custom-homeassistant.py`: integration script that forwards alerts at or above a level threshold to a Home Assistant webhook, with group filtering, cooldown and burst protection. Copy of [wazuh-homeassistant](https://github.com/benschugel/wazuh-homeassistant), which also has the Home Assistant package and tests.
 - `DockerListener.py`: Wazuh's Docker event listener wodle, kept here so it can be dropped back into the manager after an upgrade.
 - `docker-compose.yml`: upstream single-node compose with passwords moved to `.env`.
 
