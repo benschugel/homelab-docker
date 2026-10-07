@@ -33,4 +33,20 @@
     <group>recon,</group>
   </rule>
 
+  <!-- Client churn (2026-10-07). Roaming between access points is dropped
+       outright. Connect and disconnect stay at level 1: stored since the
+       manager logs level 1 and up, and still usable by frequency rules. -->
+
+  <rule id="100105" level="0">
+    <if_sid>100100</if_sid>
+    <field name="unifi.event_name" type="pcre2">^WiFi Client Roamed$</field>
+    <description>UniFi: client roamed between access points (ignored)</description>
+  </rule>
+
+  <rule id="100106" level="1">
+    <if_sid>100100</if_sid>
+    <field name="unifi.event_name" type="pcre2">^(WiFi|Wired) Client (Connected|Disconnected)$</field>
+    <description>UniFi: $(unifi.msg)</description>
+  </rule>
+
 </group>
