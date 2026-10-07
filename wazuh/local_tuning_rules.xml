@@ -66,8 +66,8 @@
   </rule>
 
   <rule id="100208" level="0">
-    <if_sid>62128,62138</if_sid>
-    <description>Windows Defender health heartbeat or dynamic signature lookup (benign)</description>
+    <if_sid>62128,62129,62138</if_sid>
+    <description>Windows Defender health heartbeat, client health report or dynamic signature lookup (benign)</description>
   </rule>
 
   <rule id="100209" level="0">
@@ -273,6 +273,34 @@
     <if_sid>550,553,554</if_sid>
     <field name="file" type="pcre2">(?i)^c:\\windows\\system32\\tasks\\softlanding\\</field>
     <description>Windows SoftLanding scheduled task churn (benign)</description>
+  </rule>
+
+  <!-- ===== Visible since log_alert_level 1, 2026-10-07 ===== -->
+
+  <!-- The UniFi gateway forwards its own process logs alongside the CEF
+       events. Two internal services log a non-error every minute. -->
+  <rule id="100235" level="0">
+    <if_sid>1002</if_sid>
+    <regex type="pcre2">/usr/bin/unifi-mq-broker\[\d+\]: Failed to send request to coredns: |ubios-udapi-server\[\d+\]: process: Process' stime is unknown \(not an error\)</regex>
+    <description>UniFi gateway internal process chatter (benign)</description>
+  </rule>
+
+  <!-- SteelSeries GG updater polls for its own processes with
+       "cmd /c tasklist | find" until GG closes. Matched on the exact command
+       only: the updater runs as SYSTEM from a user-writable ProgramData
+       folder, so its path is not trusted. -->
+  <rule id="100236" level="0">
+    <if_sid>92052</if_sid>
+    <field name="win.eventdata.user" type="pcre2">(?i)\\\\SYSTEM$</field>
+    <field name="win.eventdata.commandLine" type="pcre2">(?i)^cmd /c tasklist /nh /fi \\?"imagename eq (SteelSeries\w*|SSOverlay|gamesense-discord-x64|AudioSync|now-playing|runStatsElevated|moments|3dat)\.exe\\?" \| find /i \\?"\1\.exe\\?"$</field>
+    <description>SteelSeries GG updater polling for its own process (benign)</description>
+  </rule>
+
+  <rule id="100237" level="0">
+    <if_sid>92032</if_sid>
+    <field name="win.eventdata.image" type="pcre2">(?i)\\\\(tasklist|find)\.exe$</field>
+    <field name="win.eventdata.parentCommandLine" type="pcre2">(?i)^cmd /c tasklist /nh /fi \\?"imagename eq (SteelSeries\w*|SSOverlay|gamesense-discord-x64|AudioSync|now-playing|runStatsElevated|moments|3dat)\.exe\\?" \| find /i \\?"\1\.exe\\?"$</field>
+    <description>SteelSeries GG updater poll child process (benign)</description>
   </rule>
 
 </group>

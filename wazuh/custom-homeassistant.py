@@ -30,6 +30,8 @@ LOG_FILE = f'{pwd}/logs/integrations.log'
 # Constants
 ALERT_INDEX = 1
 WEBHOOK_INDEX = 3
+# Rule groups that never notify, whatever their level.
+SKIP_GROUPS = {'vulnerability-detector'}
 
 
 def log(msg: str) -> None:
@@ -76,6 +78,13 @@ def main(args) -> None:
 
     alert = get_json_alert(args[ALERT_INDEX])
     msg = generate_msg(alert)
+
+    # Vulnerability findings are inventory, not incidents. A single browser
+    # update can produce dozens at level 10+, so they stay in the dashboard
+    # and out of the phone.
+    if any(g in SKIP_GROUPS for g in msg['groups']):
+        log(f"rule {msg['rule_id']} level {msg['level']} skipped (group filter)")
+        return
 
     # The webhook URL is a secret, so it is never written to the log.
     try:
