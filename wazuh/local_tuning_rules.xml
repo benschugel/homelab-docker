@@ -1,4 +1,20 @@
+<!--
+  Local noise tuning for the home Wazuh manager.
+  Deployed to /var/ossec/etc/rules/local_tuning_rules.xml
+
+  Conventions
+    level 0  pure telemetry or a fully identified benign pattern. Not stored.
+    level 3  security-relevant event class from a trusted, admin-protected
+             source. Kept for audit, below the Home Assistant threshold (10).
+
+  Field values from the Windows agent contain doubled backslashes, so paths
+  are matched with \\\\ as the stock Sysmon rules do. A literal dollar sign is
+  written as \x24 so the rule loader does not read it as a variable.
+-->
+
 <group name="local,tuning,">
+
+  <!-- ===== Existing rules (2026-10-04) ===== -->
 
   <rule id="100200" level="0">
     <if_sid>60011</if_sid>
@@ -21,10 +37,272 @@
     <description>Hourly PcaSvc shim refresh (benign)</description>
   </rule>
 
-  <rule id="100203" level="3">
+  <!-- Was level 3. Lowered to 0 on 2026-10-06: it was the top rule by volume. -->
+  <rule id="100203" level="0">
     <if_sid>92213</if_sid>
     <field name="win.eventdata.targetFilename" type="pcre2">(?i)__PSScriptPolicyTest_.{12}\.ps1$|uv-trampoline-\d+\.exe$</field>
     <description>Known-benign temp file: PowerShell policy probe or uv trampoline</description>
+  </rule>
+
+  <!-- ===== Windows event log telemetry (2026-10-06) ===== -->
+
+  <rule id="100204" level="0">
+    <if_sid>60608</if_sid>
+    <description>Windows Error Reporting summary (reliability telemetry, not security)</description>
+  </rule>
+
+  <rule id="100205" level="0">
+    <if_sid>60642</if_sid>
+    <description>Software Protection service rescheduled itself (benign)</description>
+  </rule>
+
+  <!-- 100206 intentionally unused: SYSTEM service logons (60106, logon type 5)
+       are already ignored by stock rule 60232 in 4.14.8. -->
+
+  <rule id="100207" level="0">
+    <if_sid>61104</if_sid>
+    <field name="win.eventdata.param1" type="pcre2">^(Background Intelligent Transfer Service|IsolationSession|Windows Modules Installer)$</field>
+    <description>Windows toggled start type of $(win.eventdata.param1) (benign)</description>
+  </rule>
+
+  <rule id="100208" level="0">
+    <if_sid>62128,62138</if_sid>
+    <description>Windows Defender health heartbeat or dynamic signature lookup (benign)</description>
+  </rule>
+
+  <rule id="100209" level="0">
+    <if_sid>60716,60702</if_sid>
+    <description>Restore point skipped or VSS idle shutdown (benign)</description>
+  </rule>
+
+  <!-- ===== Wazuh agent's own SCA scan ===== -->
+
+  <rule id="100210" level="0">
+    <if_sid>92205</if_sid>
+    <field name="win.eventdata.targetFilename" type="pcre2">(?i)\\\\Windows\\\\(SystemTemp|Temp)\\\\__PSScriptPolicyTest_[a-z0-9]{8}\.[a-z0-9]{3}\.ps1$</field>
+    <description>PowerShell policy probe file in Windows temp (benign)</description>
+  </rule>
+
+  <rule id="100211" level="0">
+    <if_sid>92066</if_sid>
+    <field name="win.eventdata.currentDirectory" type="pcre2">(?i)^C:\\\\Program Files \(x86\)\\\\ossec-agent\\\\$</field>
+    <field name="win.eventdata.user" type="pcre2">(?i)\\\\SYSTEM$</field>
+    <field name="win.eventdata.parentCommandLine" type="pcre2">(?i)^powershell .{0,12}secedit /export /cfg \x24env:temp[\\\\/]+sec(pol|export)\.cfg</field>
+    <description>Wazuh agent SCA running secedit export (benign)</description>
+  </rule>
+
+  <rule id="100212" level="0">
+    <if_sid>92021</if_sid>
+    <field name="win.eventdata.parentImage" type="pcre2">(?i)^C:\\\\Program Files \(x86\)\\\\ossec-agent\\\\wazuh-agent\.exe$</field>
+    <field name="win.eventdata.commandLine" type="pcre2">(?i)^powershell .{0,12}secedit /export /cfg \x24env:temp[\\\\/]+sec(pol|export)\.cfg</field>
+    <description>Wazuh agent SCA cleaning up its secedit export (benign)</description>
+  </rule>
+
+  <!-- ===== Developer tooling on Ben-PC ===== -->
+
+  <rule id="100213" level="0">
+    <if_sid>92052</if_sid>
+    <field name="win.eventdata.parentImage" type="pcre2">(?i)^C:\\\\Users\\\\[^\\\\]+\\\\(\.local\\\\bin|AppData\\\\Local\\\\Packages\\\\Claude_[a-z0-9]+\\\\LocalCache\\\\Roaming\\\\Claude\\\\claude-code\\\\[^\\\\]+\\\\[^\\\\]+)\\\\claude\.exe$</field>
+    <description>Claude Code started cmd.exe (expected for an agentic CLI)</description>
+  </rule>
+
+  <rule id="100214" level="0">
+    <if_sid>92032</if_sid>
+    <field name="win.eventdata.parentCommandLine" type="pcre2">(?i)cmd\.exe /d /s /c \\?"\\?"C:\\\\WINDOWS\\\\System32\\\\chcp\.com\\?" 65001 .{4,24}C:\\\\Program Files\\\\WindowsApps\\\\Microsoft\.PowerShell_[^\\\\]+\\\\pwsh\.exe\\?" -NoProfile -NonInteractive -ExecutionPolicy Bypass -Command \\?"\x24__claudeCodeScript = \x24env:CLAUDE_CODE_SHELL_LAUNCHER_SCRIPT</field>
+    <description>Claude Code PowerShell launcher wrapper (chcp + pwsh)</description>
+  </rule>
+
+  <rule id="100215" level="0">
+    <if_sid>92052</if_sid>
+    <field name="win.eventdata.parentImage" type="pcre2">(?i)^C:\\\\Program Files\\\\Google\\\\Chrome\\\\Application\\\\chrome\.exe$</field>
+    <field name="win.eventdata.commandLine" type="pcre2">(?i)cmd\.exe /d /s /c \\?"\\?"(C:/Program Files/Chatterino/chatterino\.exe|C:\\\\Users\\\\[^\\\\]+\\\\AppData\\\\Local\\\\Packages\\\\Claude_[a-z0-9]+\\\\LocalCache\\\\Roaming\\\\Claude\\\\ChromeNativeHost\\\\chrome-native-host\.exe)\\?" chrome-extension://[a-p]{32}/</field>
+    <description>Chrome launched a known native messaging host (Chatterino or Claude)</description>
+  </rule>
+
+  <rule id="100216" level="0">
+    <if_sid>92032</if_sid>
+    <field name="win.eventdata.parentCommandLine" type="pcre2">(?i)cmd\.exe /d /s /c \\?"\\?"(C:/Program Files/Chatterino/chatterino\.exe|C:\\\\Users\\\\[^\\\\]+\\\\AppData\\\\Local\\\\Packages\\\\Claude_[a-z0-9]+\\\\LocalCache\\\\Roaming\\\\Claude\\\\ChromeNativeHost\\\\chrome-native-host\.exe)\\?" chrome-extension://[a-p]{32}/</field>
+    <description>Known Chrome native messaging host process (Chatterino or Claude)</description>
+  </rule>
+
+  <rule id="100217" level="0">
+    <if_sid>92052</if_sid>
+    <field name="win.eventdata.commandLine" type="pcre2">(?i)^C:\\\\WINDOWS\\\\system32\\\\cmd\.exe /c \\?"ver\\?"$</field>
+    <description>Python platform probe running cmd /c ver (benign)</description>
+  </rule>
+
+  <rule id="100218" level="0">
+    <if_sid>92052</if_sid>
+    <field name="win.eventdata.commandLine" type="pcre2">(?i)^cmd /c npx -y @baruchiro/paperless-mcp@latest$|^C:\\\\WINDOWS\\\\system32\\\\cmd\.exe /d /s /c paperless-mcp$</field>
+    <description>Paperless MCP server launcher shell (benign)</description>
+  </rule>
+
+  <rule id="100219" level="0">
+    <if_sid>92032,92005</if_sid>
+    <field name="win.eventdata.parentCommandLine" type="pcre2">(?i)^cmd /c npx -y @baruchiro/paperless-mcp@latest$|^C:\\\\WINDOWS\\\\system32\\\\cmd\.exe /d /s /c paperless-mcp$</field>
+    <description>Paperless MCP server node process (benign)</description>
+  </rule>
+
+  <rule id="100220" level="0">
+    <if_sid>92200</if_sid>
+    <field name="win.eventdata.image" type="pcre2">(?i)^C:\\\\Users\\\\[^\\\\]+\\\\\.local\\\\bin\\\\uv\.exe$</field>
+    <field name="win.eventdata.targetFilename" type="pcre2">(?i)\\\\Scripts\\\\(activate|deactivate|pydoc)\.(bat|ps1)$</field>
+    <description>uv created virtualenv activation scripts (benign)</description>
+  </rule>
+
+  <!-- ===== Trusted updaters dropping executables in user Temp =====
+       Stock rule 92213 is level 15 and pages Home Assistant. These images
+       live in admin-only folders, so the drop is kept at level 3. -->
+
+  <rule id="100221" level="3">
+    <if_sid>92213</if_sid>
+    <field name="win.eventdata.image" type="pcre2">(?i)^C:\\\\Program Files \(x86\)\\\\Steam\\\\bin\\\\hardwareupdater\\\\hardwareupdater\.exe$</field>
+    <field name="win.eventdata.targetFilename" type="pcre2">(?i)\\\\AppData\\\\Local\\\\Temp\\\\_MEI\d+\\\\</field>
+    <options>no_full_log</options>
+    <description>Steam hardware updater unpacked its runtime in Temp</description>
+  </rule>
+
+  <rule id="100222" level="3">
+    <if_sid>92213</if_sid>
+    <field name="win.eventdata.image" type="pcre2">(?i)^C:\\\\Program Files \(x86\)\\\\Microsoft\\\\EdgeWebView\\\\Application\\\\[\d.]+\\\\msedgewebview2\.exe$</field>
+    <field name="win.eventdata.targetFilename" type="pcre2">(?i)\\\\AppData\\\\Local\\\\Temp\\\\msedge_chrome_Unpacker_BeginUnzipping\d+_\d+\\\\</field>
+    <options>no_full_log</options>
+    <description>Edge WebView2 component update unpacked in Temp</description>
+  </rule>
+
+  <rule id="100223" level="3">
+    <if_sid>92213</if_sid>
+    <field name="win.eventdata.image" type="pcre2">(?i)^C:\\\\Program Files\\\\Docker\\\\Docker\\\\resources\\\\com\.docker\.backend\.exe$</field>
+    <field name="win.eventdata.targetFilename" type="pcre2">(?i)\\\\AppData\\\\Local\\\\Temp\\\\DockerDesktopUpdates\\\\</field>
+    <options>no_full_log</options>
+    <description>Docker Desktop downloaded its updater to Temp</description>
+  </rule>
+
+  <rule id="100224" level="3">
+    <if_sid>92213</if_sid>
+    <field name="win.eventdata.image" type="pcre2">(?i)^C:\\\\ProgramData\\\\Mullvad VPN\\\\cache\\\\mullvad-update\\\\mullvad-[\d.]+\.exe$</field>
+    <field name="win.eventdata.targetFilename" type="pcre2">(?i)\\\\AppData\\\\Local\\\\Temp\\\\ns[a-z][0-9a-f]+\.tmp\\\\</field>
+    <options>no_full_log</options>
+    <description>Mullvad VPN updater unpacked its installer in Temp</description>
+  </rule>
+
+  <!-- ===== Windows Update and logon housekeeping ===== -->
+
+  <rule id="100225" level="0">
+    <if_sid>92219</if_sid>
+    <field name="win.eventdata.image" type="pcre2">(?i)^C:\\\\WINDOWS\\\\system32\\\\svchost\.exe$</field>
+    <field name="win.eventdata.targetFilename" type="pcre2">(?i)^C:\\\\Windows\\\\(SoftwareDistribution\\\\Download\\\\[0-9a-f]{8,}\\\\.+\.dll|SystemTemp\\\\\{[0-9a-f-]{36}\}\\\\ssshim\.dll)$</field>
+    <description>Windows Update staged DLLs (benign)</description>
+  </rule>
+
+  <rule id="100226" level="0">
+    <if_sid>92217</if_sid>
+    <field name="win.eventdata.image" type="pcre2">(?i)^C:\\\\WINDOWS\\\\uus\\\\(AMD64|ARM64)\\\\(wuaucltcore|MoUsoCoreWorker)\.exe$</field>
+    <description>Windows Update stack staged files under Windows (benign)</description>
+  </rule>
+
+  <rule id="100227" level="0">
+    <if_sid>92307</if_sid>
+    <field name="win.eventdata.image" type="pcre2">(?i)^C:\\\\WINDOWS\\\\system32\\\\services\.exe$</field>
+    <field name="win.eventdata.targetObject" type="pcre2">(?i)\\\\Services\\\\[a-z0-9]+_[0-9a-f]{5,8}\\\\ImagePath$</field>
+    <field name="win.eventdata.details" type="pcre2">(?i)^C:\\\\WINDOWS\\\\system32\\\\(svchost\.exe -k [a-z0-9]+( -p)?|CredentialEnrollmentManager\.exe)$</field>
+    <description>Per-user service instance registered at logon (benign)</description>
+  </rule>
+
+  <rule id="100228" level="0">
+    <if_sid>61640</if_sid>
+    <field name="win.eventdata.commandLine" type="pcre2">(?i)^C:\\\\WINDOWS\\\\explorer\.exe /factory,\{[0-9a-f-]{36}\} -Embedding$|^\\?"C:\\\\Windows\\\\explorer\.exe\\?" x-cmdpal://background$</field>
+    <description>Explorer started by COM or PowerToys Command Palette (benign)</description>
+  </rule>
+
+  <rule id="100229" level="3">
+    <if_sid>92043</if_sid>
+    <field name="win.eventdata.parentImage" type="pcre2">(?i)^C:\\\\Program Files\\\\Tailscale\\\\tailscaled\.exe$</field>
+    <field name="win.eventdata.commandLine" type="pcre2">(?i) add rule name=Tailscale-(Process|In) </field>
+    <options>no_full_log</options>
+    <description>Tailscale re-added its own firewall rule</description>
+  </rule>
+
+  <!-- ===== Medium band (levels 7-11), 2026-10-07 ===== -->
+
+  <!-- The manager's TLS files are Windows bind mounts, which Docker Desktop
+       always presents as mode 777. Rootcheck flags them on every scan. -->
+  <rule id="100230" level="0">
+    <if_sid>510</if_sid>
+    <field name="file" type="pcre2">^/etc/ssl/(filebeat\.pem|filebeat\.key|root-ca\.pem)$</field>
+    <field name="title">written permissions to anyone</field>
+    <description>Rootcheck: bind-mounted TLS file looks world-writable (Docker Desktop artifact)</description>
+  </rule>
+
+  <!-- Restart Manager noting an app could not be restarted or shut down
+       during an update. Reliability information, not an error. -->
+  <rule id="100231" level="3">
+    <if_sid>60602</if_sid>
+    <field name="win.system.providerName">^Microsoft-Windows-RestartManager$</field>
+    <options>no_full_log</options>
+    <description>Restart Manager: $(win.system.message)</description>
+  </rule>
+
+  <!-- Known repeat crashers: Intel Driver and Support Assistant (missing
+       ASP.NET Core 8 x86 runtime), Phone Link, Intel Graphics Software,
+       HASS.Agent satellite service. Still logged, no longer medium. -->
+  <rule id="100232" level="5">
+    <if_sid>60602,61017,61021</if_sid>
+    <field name="win.system.message" type="pcre2">(?i)DSAService(Helper)?\.exe|DSAUpdateService\.exe|Intel\(R\) Driver (&amp;|&amp;amp;) Support Assistant|PhoneExperienceHost\.exe|YourPhoneAppProxyHost\.exe|IntelGraphicsSoftware\.exe|HASS\.Agent</field>
+    <options>no_full_log</options>
+    <description>Known crashing application: $(win.system.providerName) event $(win.system.eventID)</description>
+  </rule>
+
+  <!-- Event 4738 raised by the computer account itself where every changed
+       attribute except Display Name reads "-" (Microsoft account sync).
+       A negated field test fails when the field is absent, so the check is
+       done on the event text, which always lists all attributes. Any
+       password, UAC, SID history or group change still alerts at level 8. -->
+  <rule id="100233" level="3">
+    <if_sid>60110</if_sid>
+    <field name="win.system.eventID">^4738$</field>
+    <field name="win.eventdata.subjectUserSid">^S-1-5-18$</field>
+    <field name="win.system.message" type="pcre2">Changed Attributes:\s+SAM Account Name:\s+-\s+Display Name:\s+[^\r\n]+\s+User Principal Name:\s+-\s+Home Directory:\s+-\s+Home Drive:\s+-\s+Script Path:\s+-\s+Profile Path:\s+-\s+User Workstations:\s+-\s+Password Last Set:\s+-\s+Account Expires:\s+-\s+Primary Group ID:\s+-\s+AllowedToDelegateTo:\s+-\s+Old UAC Value:\s+-\s+New UAC Value:\s+-\s+User Account Control:\s+-\s+User Parameters:\s+-\s+SID History:\s+-\s+Logon Hours:\s+-</field>
+    <options>no_full_log</options>
+    <description>Account attribute refresh for $(win.eventdata.targetUserName) by the system (no security attribute changed)</description>
+  </rule>
+
+  <!-- Windows setup "soft landing" nag tasks are created and deleted on
+       their own schedule. -->
+  <rule id="100234" level="0">
+    <if_sid>550,553,554</if_sid>
+    <field name="file" type="pcre2">(?i)^c:\\windows\\system32\\tasks\\softlanding\\</field>
+    <description>Windows SoftLanding scheduled task churn (benign)</description>
+  </rule>
+
+</group>
+
+<!-- ===== SCA per-check results =====
+     Every check result was an alert, so each agent enrollment produced
+     hundreds. The results stay in the Configuration Assessment inventory.
+     Score summaries (19001-19005) and state changes (19010-19015) still alert. -->
+
+<group name="sca,gdpr_IV_35.7.d,pci_dss_2.2,nist_800_53_CM.1,tsc_CC7.1,tsc_CC7.2,">
+
+  <rule id="19007" level="0" overwrite="yes">
+    <if_sid>19006</if_sid>
+    <field name="sca.check.result">^failed</field>
+    <options>no_full_log</options>
+    <description>$(sca.policy): $(sca.check.title)</description>
+  </rule>
+
+  <rule id="19008" level="0" overwrite="yes">
+    <if_sid>19006</if_sid>
+    <field name="sca.check.result">^passed</field>
+    <options>no_full_log</options>
+    <description>$(sca.policy): $(sca.check.title)</description>
+  </rule>
+
+  <rule id="19009" level="0" overwrite="yes">
+    <if_sid>19006</if_sid>
+    <field name="sca.check.result">^not applicable</field>
+    <options>no_full_log</options>
+    <description>$(sca.policy): $(sca.check.title)</description>
   </rule>
 
 </group>
