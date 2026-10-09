@@ -375,6 +375,27 @@
     <description>Dropbox installer re-added its LAN sync firewall rule</description>
   </rule>
 
+  <!-- ===== Burst summary for Temp drops (2026-10-09) ===== -->
+
+  <!-- Installers unpack dozens of executables into the user's Temp inside a
+       few seconds, and stock 92213 alerts once per file (31 alerts in five
+       seconds from the Intel graphics installer on 2026-10-08). 92213 stays
+       at level 15 and keeps firing per file. Once the same writing process
+       (Sysmon ProcessGuid) has produced ten 92213 alerts inside two minutes,
+       this rule takes the next event and names the process, so a burst reads
+       as one summary line with the per-file alerts under it. Events already
+       demoted by 100240 or 100243 do not count towards the ten. -->
+  <rule id="100500" level="15" frequency="10" timeframe="120">
+    <if_matched_sid>92213</if_matched_sid>
+    <same_field>win.eventdata.processGuid</same_field>
+    <options>no_full_log</options>
+    <description>Burst of executables dropped in Temp by one process: $(win.eventdata.image)</description>
+    <mitre>
+      <id>T1105</id>
+    </mitre>
+    <group>sysmon_eid11_detections,burst_summary,</group>
+  </rule>
+
 </group>
 
 <!-- ===== SCA per-check results =====
