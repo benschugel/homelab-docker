@@ -303,6 +303,78 @@
     <description>SteelSeries GG updater poll child process (benign)</description>
   </rule>
 
+  <!-- ===== Oct 8 triage ===== -->
+
+  <!-- Trusted updaters unpacking into Windows\SystemTemp or the user's Temp.
+       Dropbox and Garmin Express run as SYSTEM out of Program Files; Overwolf
+       and Spotify unpack a Widevine CDM component update under the user's
+       Temp. Stock 92213 is level 15 and 92217 is level 6. -->
+  <rule id="100240" level="3">
+    <if_sid>92213,92217</if_sid>
+    <field name="win.eventdata.image" type="pcre2">(?i)^C:\\\\Program Files( \(x86\))?\\\\(Dropbox\\\\DropboxUpdater\\\\[\d.]+\\\\updater\.exe|Garmin\\\\Express SelfUpdater\\\\esu\.exe|Overwolf\\\\[\d.]+\\\\Overwolf\.exe|WindowsApps\\\\SpotifyAB\.SpotifyMusic_[^\\\\]+\\\\Spotify\.exe)$</field>
+    <field name="win.eventdata.targetFilename" type="pcre2">(?i)^C:\\\\(Windows\\\\SystemTemp\\\\(dropbox_Unpacker_BeginUnzipping\d+_\d+\\\\|tmp[0-9a-f]+\.tmp\.exe$)|Windows\\\\SysWOW64\\\\config\\\\systemprofile\\\\AppData\\\\Local\\\\assembly\\\\tmp\\\\|Users\\\\[^\\\\]+\\\\AppData\\\\Local\\\\Temp\\\\(chromium_)?chrome_Unpacker_BeginUnzipping\d+_\d+\\\\)</field>
+    <options>no_full_log</options>
+    <description>Trusted updater unpacked files in a temp folder: $(win.eventdata.image)</description>
+  </rule>
+
+  <!-- Service install (7045) of a kernel mode driver. Vendor utilities
+       (GIGABYTE RGB Fusion, AMD, MSI) ship signed but exploitable drivers, so
+       this is worth a phone notification even when the install was intended.
+       User mode services stay at the stock level 5. -->
+  <rule id="100241" level="12">
+    <if_sid>61138</if_sid>
+    <field name="win.eventdata.serviceType" type="pcre2">(?i)^kernel mode driver$</field>
+    <options>no_full_log</options>
+    <description>Kernel mode driver installed: $(win.eventdata.serviceName) ($(win.eventdata.imagePath))</description>
+    <mitre>
+      <id>T1543.003</id>
+      <id>T1068</id>
+    </mitre>
+  </rule>
+
+  <!-- Claude Code keeps a per-session scratchpad under the user's Temp
+       (Temp\claude\<project>\<session uuid>\scratchpad). Scripts written
+       there by the session's own shell hit 92213 at level 15 every time.
+       Level 1: stored and searchable, nothing paged. Only the session folder
+       is covered and only for the Git bash and claude.exe writers; anything
+       else dropping a file there still alerts at 15. -->
+  <rule id="100243" level="1">
+    <if_sid>92213</if_sid>
+    <field name="win.eventdata.image" type="pcre2">(?i)^C:\\\\Program Files\\\\Git\\\\(bin\\\\\.\.\\\\)?usr\\\\bin\\\\bash\.exe$|^C:\\\\Users\\\\[^\\\\]+\\\\(\.local\\\\bin|AppData\\\\Local\\\\Packages\\\\Claude_[a-z0-9]+\\\\LocalCache\\\\Roaming\\\\Claude\\\\claude-code\\\\[^\\\\]+\\\\[^\\\\]+)\\\\claude\.exe$</field>
+    <field name="win.eventdata.targetFilename" type="pcre2">(?i)^C:\\\\Users\\\\[^\\\\]+\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\[^\\\\]+\\\\[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\\\\scratchpad\\\\</field>
+    <options>no_full_log</options>
+    <description>Claude Code session wrote a script to its own scratchpad</description>
+  </rule>
+
+  <!-- ===== Level 10 noise, 2026-10-08 evening triage ===== -->
+
+  <!-- Installers and self-updaters write version strings and paths under the
+       Uninstall key with reg.exe add. Stock 92041 reads any /d value that is
+       Base64-shaped (1.0.9261, 76196) as obfuscation. Scoped to the Uninstall
+       key, the standard value names, and the two parents seen (Discord's own
+       updater, and cmd.exe running an installer batch as SYSTEM). Any other
+       key or value name stays at the stock level 10. -->
+  <rule id="100244" level="3">
+    <if_sid>92041</if_sid>
+    <field name="win.eventdata.commandLine" type="pcre2">(?i)^(C:\\\\WINDOWS\\\\System32\\\\)?reg(\.exe)? +add +HK(LM|CU|EY_LOCAL_MACHINE|EY_CURRENT_USER)\\\\Software\\\\Microsoft\\\\Windows\\\\CurrentVersion\\\\Uninstall\\\\[^\\\\ ]+ .*\/v +(DisplayVersion|DisplayIcon|DisplayName|Version|VersionMajor|VersionMinor|VersionBuild|EstimatedSize|BuildDate|InstallLocation|Publisher|UninstallString)( |$)</field>
+    <field name="win.eventdata.parentImage" type="pcre2">(?i)^C:\\\\Users\\\\[^\\\\]+\\\\AppData\\\\Local\\\\Discord\\\\app-[\d.]+\\\\Discord\.exe$|^C:\\\\Windows\\\\System32\\\\cmd\.exe$</field>
+    <options>no_full_log</options>
+    <description>Installer wrote its Uninstall registry entry: $(win.eventdata.parentImage)</description>
+  </rule>
+
+  <!-- The Dropbox machine installer, running as SYSTEM out of SystemTemp,
+       re-adds its LAN sync firewall rules on every auto-update. Same shape as
+       100229 for Tailscale. The quote around program= reaches the field as a
+       backslash-escaped quote, so \W{1,2} stands in for it. -->
+  <rule id="100245" level="3">
+    <if_sid>92043</if_sid>
+    <field name="win.eventdata.parentImage" type="pcre2">(?i)^C:\\\\Windows\\\\SystemTemp\\\\dropbox_Unpacker_BeginUnzipping\d+_\d+\\\\app\\\\Dropbox\.exe$</field>
+    <field name="win.eventdata.commandLine" type="pcre2">(?i) add rule name=Dropbox dir=in action=allow \W{1,2}program=C:\\\\Program Files \(x86\)\\\\Dropbox\\\\Client\\\\Dropbox\.exe\W{1,2} enable=yes profile=Any protocol=(udp|tcp) localport=1750\d(-1751\d)?$</field>
+    <field name="win.eventdata.user" type="pcre2">^NT AUTHORITY\\\\SYSTEM$</field>
+    <options>no_full_log</options>
+    <description>Dropbox installer re-added its LAN sync firewall rule</description>
+  </rule>
+
 </group>
 
 <!-- ===== SCA per-check results =====
