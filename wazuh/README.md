@@ -18,6 +18,7 @@ Copy each example and fill it in; the real files are gitignored.
 |---|---|---|
 | `.env.example` | `.env` | `INDEXER_PASSWORD`, `API_PASSWORD`, `DASHBOARD_PASSWORD` used by the compose file |
 | `config/wazuh_dashboard/wazuh.yml.example` | `config/wazuh_dashboard/wazuh.yml` | the dashboard's API connection, including the `wazuh-wui` password |
+| `config/wazuh_cluster/wazuh_manager.conf.example` | `config/wazuh_cluster/wazuh_manager.conf` | manager config; the real one holds the Home Assistant webhook URL and the cluster key |
 
 Also local and ignored: `config/wazuh_indexer/internal_users.yml` (hashed indexer users; must match `.env`) and `config/wazuh_indexer_ssl_certs/` (generated once with `docker compose -f generate-indexer-certs.yml run --rm generator`).
 
@@ -32,3 +33,20 @@ First start takes a minute or two while the indexer initializes. Dashboard is at
 ## Attribution
 
 `docker-compose.yml`, `generate-indexer-certs.yml`, everything under `config/`, and `DockerListener.py` are adapted from [wazuh/wazuh-docker](https://github.com/wazuh/wazuh-docker) and remain under that project's GPLv2 license. The custom rules, decoder, tuning, and Home Assistant integration are mine and are covered by this repository's license.
+
+## Shared agent config
+
+`agent.conf` is the centralized config for the `default` agent group
+(`/var/ossec/etc/shared/default/agent.conf` in the manager). It holds the
+Windows client buffer size and the Downloads FIM path. After copying it in, run
+`/var/ossec/bin/verify-agent-conf` inside the container.
+
+## Tests
+
+`tests/` holds the rule test harness from the tuning work:
+
+- `replay.py`: replays recorded alerts through `wazuh-logtest` and prints which rule each one hits now.
+- `guard_cases.py`: synthetic events that must keep alerting after tuning.
+- `guard_cases_medium.py`: guard cases for the level 7 to 11 tuning (rules 100230 to 100234).
+
+Rules follow these conventions: level 0 is pure telemetry or a fully identified benign pattern and ends processing; level 1 is stored and indexed but easy to filter with `rule.level >= 3`; level 3 is a security-relevant event from a trusted admin-only path, kept for audit but below the Home Assistant threshold (level 10). Scope every rule by full image path, command line or target path, and never silence a stock rule outright unless it is pure telemetry.

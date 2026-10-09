@@ -1,0 +1,8 @@
+# Secrets and generated state. Copy the .example files and fill them in.
+.env
+config/wazuh_dashboard/wazuh.yml
+config/wazuh_cluster/wazuh_manager.conf
+config/wazuh_indexer/internal_users.yml
+config/wazuh_indexer_ssl_certs/
+__pycache__/
+*.pyc
