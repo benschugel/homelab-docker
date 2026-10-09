@@ -37,10 +37,15 @@
     <description>Hourly PcaSvc shim refresh (benign)</description>
   </rule>
 
-  <!-- Was level 3. Lowered to 0 on 2026-10-06: it was the top rule by volume. -->
+  <!-- Was level 3. Lowered to 0 on 2026-10-06: it was the top rule by volume.
+       Scoped on 2026-10-09 to the writers actually seen: the PowerShell
+       engine (powershell.exe, pwsh.exe) probing its script policy, and uv
+       staging a launcher stub in a random .tmp folder. The same file names
+       from any other process stay at the stock level 15. -->
   <rule id="100203" level="0">
     <if_sid>92213</if_sid>
-    <field name="win.eventdata.targetFilename" type="pcre2">(?i)__PSScriptPolicyTest_.{12}\.ps1$|uv-trampoline-\d+\.exe$</field>
+    <field name="win.eventdata.image" type="pcre2">(?i)^C:\\\\(Windows\\\\(System32|SysWOW64)\\\\WindowsPowerShell\\\\v1\.0\\\\powershell\.exe|Program Files\\\\(WindowsApps\\\\Microsoft\.PowerShell_[^\\\\]+\\\\|PowerShell\\\\\d+\\\\)pwsh\.exe|Users\\\\[^\\\\]+\\\\\.local\\\\bin\\\\uv\.exe)$</field>
+    <field name="win.eventdata.targetFilename" type="pcre2">(?i)__PSScriptPolicyTest_.{12}\.ps1$|\\\\\.tmp[A-Za-z0-9]{6}\\\\uv-trampoline-\d+\.exe$</field>
     <description>Known-benign temp file: PowerShell policy probe or uv trampoline</description>
   </rule>
 
@@ -373,6 +378,20 @@
     <field name="win.eventdata.user" type="pcre2">^NT AUTHORITY\\\\SYSTEM$</field>
     <options>no_full_log</options>
     <description>Dropbox installer re-added its LAN sync firewall rule</description>
+  </rule>
+
+  <!-- Docker health checks. Once the Docker listener was fixed on 2026-10-09
+       every HEALTHCHECK exec (frigate, the two wazuh-mcp containers,
+       paperless) became a level 3 87907 alert, one every 15 seconds. A
+       health check is a curl against localhost inside the container, with
+       an optional "/bin/sh -c" wrapper, frigate's stop-file prelude and a
+       jq or exit tail. Any other exec, including curl to a non-local host
+       and shell sessions (87908), keeps its stock level. The loader does
+       not decode &amp;amp;, so the && is written as \x26\x26. -->
+  <rule id="100247" level="0">
+    <if_sid>87907</if_sid>
+    <field name="docker.Action" type="pcre2">^exec_start: (/bin/sh -c )?(test -f /dev/shm/\.frigate-is-stopping \x26\x26 exit 0; )?curl [-\w ]*https?://(localhost|127\.0\.0\.1):\d+\S*( \|\| exit 1| \| jq -e '\.status == "healthy"' > /dev/null)?$</field>
+    <description>Docker health check exec in $(docker.Actor.Attributes.name)</description>
   </rule>
 
   <!-- ===== Burst summary for Temp drops (2026-10-09) ===== -->
