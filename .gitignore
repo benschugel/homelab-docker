@@ -1,6 +1,7 @@
 # secrets and env
 .env
 *.env
+.env.*
 !.env.example
 secrets.yml
 secrets.yaml
@@ -62,3 +63,6 @@ Thumbs.db
 *-backup-*/
 *.tgz
 *.tar.gz
+
+# Live manager config: holds the Home Assistant webhook URL. Copy from the .example.
+wazuh/config/wazuh_cluster/wazuh_manager.conf

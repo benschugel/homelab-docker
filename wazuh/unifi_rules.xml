@@ -49,4 +49,17 @@
     <description>UniFi: $(unifi.msg)</description>
   </rule>
 
+  <!-- Oct 8 triage. The phone (192.168.20.91) keeps hitting the gateway on
+       port 80 and the "Trusted to Gateway Mgmt Block" policy drops it every
+       time. Level 2 keeps the blocks stored but below the level 3 dashboard
+       filter, and 100104 no longer counts them toward its scan threshold. -->
+
+  <rule id="100242" level="2">
+    <if_sid>100101</if_sid>
+    <srcip>192.168.20.91</srcip>
+    <dstport>^80$</dstport>
+    <field name="unifi.dst_zone" type="pcre2">^Gateway$</field>
+    <description>UniFi: phone blocked from gateway port 80 (expected)</description>
+  </rule>
+
 </group>
