@@ -98,7 +98,11 @@ class DockerListener:
 
         """
         try:
-            for event in self.client.events():
+            # decode=True makes the SDK reassemble the chunked HTTP stream into
+            # one dict per event. Raw chunks are neither one-per-event nor
+            # aligned to event boundaries (Docker Desktop splits events at
+            # about 1850 bytes), so decoding them here would fail.
+            for event in self.client.events(decode=True):
                 self.process(event)
         except Exception as e:
             raise e
@@ -108,15 +112,11 @@ class DockerListener:
 
     def process(self, event):
         """
-        Processes a main Docker event. A single chunk from the Docker API may
-        contain several newline-delimited JSON events, so split and handle each.
+        Processes a main Docker event.
 
-        :param event: Docker event.
+        :param event: Docker event, already decoded to a dict by the SDK.
         """
-        for line in event.decode("utf-8").splitlines():
-            line = line.strip()
-            if line:
-                self.send_msg(line)
+        self.send_msg(json.dumps(event))
 
     def format_msg(self, msg):
         """
