@@ -41,6 +41,37 @@ First start takes a minute or two while the indexer initializes. Dashboard is at
 Windows client buffer size and the Downloads FIM path. After copying it in, run
 `/var/ossec/bin/verify-agent-conf` inside the container.
 
+## Sysmon config
+
+`sysmon/sysmonconfig.xml` is the unmodified SwiftOnSecurity
+[sysmon-config](https://github.com/SwiftOnSecurity/sysmon-config) (source
+version 74, 2021-07-08, schema 4.50). Both Windows agents run it from
+`C:\Sysmon\sysmonconfig.xml`. Its SHA256 is
+`055FEBC600E6D7448CDF3812307275912927A62B1F94D0D933B64B294BC87162`, which is
+also the "Config hash" that `Sysmon64.exe -c` prints when the active config
+matches this file.
+
+Check a machine (elevated PowerShell):
+
+```
+(Get-ItemProperty HKLM:\SYSTEM\CurrentControlSet\Services\SysmonDrv\Parameters).ConfigHash
+```
+
+Apply it (elevated, no reboot needed):
+
+```
+C:\Windows\Sysmon64.exe -c C:\Sysmon\sysmonconfig.xml
+```
+
+Known weak spot: a driver install writes tens of thousands of registry values
+that the config's include list catches (`\FriendlyName`, `\DriverVersion`,
+`\Start`, `\ImagePath`). On 2026-10-08 the laptop's Intel graphics update
+overflowed the Sysmon driver queue (event 255, about 41,000 registry events
+dropped) and the process events that survived came through with an all-zero
+parent GUID; Wazuh rules 100252 and 100253 handle that fallout. Any change to
+this file changes the hash, so update this section and re-apply on both
+machines together.
+
 ## Tests
 
 `tests/` holds the rule test harness from the tuning work:
