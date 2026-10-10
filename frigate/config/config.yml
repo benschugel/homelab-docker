@@ -55,7 +55,12 @@ cameras:
       crop: false
       height: 720
       quality: 90
-    review: {}
+    review:
+      alerts:
+        labels:
+          - car
+        required_zones:
+          - driveway_zone
     audio_transcription:
       enabled: true
     zones:
@@ -310,4 +315,4 @@ detectors:
     device: Tensorrt
 
 model:
-  path: plus://5fbd40a532cff3b11ee2ceaaba7094a0
+  path: plus://89bc6353ce483d1628fb9a8ca35056cd
