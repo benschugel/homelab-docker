@@ -536,6 +536,18 @@
     <description>Windows Time service adjusted the system clock</description>
   </rule>
 
+  <!-- Claude Desktop rewrites claude_desktop_config.json many times during
+       a session (71 modifications in one evening on 2026-10-09). The file
+       holds the MCP server definitions, so it stays under FIM and every
+       change is kept, but at level 3 instead of the stock 7. The shared
+       agent.conf adds report_changes for the path, so the alert carries the
+       diff. Deletion (553) and re-creation (554) keep their stock levels. -->
+  <rule id="100262" level="3">
+    <if_sid>550</if_sid>
+    <field name="file" type="pcre2">(?i)^c:\\users\\[^\\]+\\appdata\\(local\\packages\\claude_[a-z0-9]+\\localcache\\roaming|roaming)\\claude\\claude_desktop_config\.json$</field>
+    <description>Claude Desktop rewrote its own config file (expected churn): $(file)</description>
+  </rule>
+
   <!-- ===== Burst summary for Temp drops (2026-10-09) ===== -->
 
   <!-- Installers unpack dozens of executables into the user's Temp inside a
