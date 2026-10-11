@@ -59,8 +59,14 @@ cameras:
       alerts:
         labels:
           - car
+          - person
+          - package
+          - motorcycle
+          - bicycle
+          - bear
         required_zones:
           - driveway_zone
+          - front_yard
     audio_transcription:
       enabled: true
     zones:
