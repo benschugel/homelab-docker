@@ -1,6 +1,6 @@
 # Wazuh single node
 
-Wazuh 4.9.2 SIEM (manager, indexer, dashboard) on Docker Desktop for Windows. State lives in named volumes under the `single-node` project name; this folder holds the compose file, mounted config, and the custom detection content that gets copied into the manager.
+Wazuh 4.14.8 SIEM (manager, indexer, dashboard) on Docker Desktop for Windows. State lives in named volumes under the `single-node` project name; this folder holds the compose file, mounted config, and the custom detection content that gets copied into the manager.
 
 ## What's custom
 
@@ -78,6 +78,14 @@ machines together.
 
 - `replay.py`: replays recorded alerts through `wazuh-logtest` and prints which rule each one hits now.
 - `guard_cases.py`: synthetic events that must keep alerting after tuning.
-- `guard_cases_medium.py`: guard cases for the level 7 to 11 tuning (rules 100230 to 100234).
+- `guard_cases_medium.py`: the level 7 to 11 tuning (rules 100230 to 100234).
+- `guard_cases_oct8.py`: the 2026-10-08 triage (rules 100240 to 100243, including UniFi gateway blocks).
+- `guard_cases_oct8b.py`: the 2026-10-08 evening level 10 triage (rules 100244 and 100245).
+- `guard_cases_laptop.py`: the 2026-10-09 laptop triage (rules 100250 to 100261).
+- `guard_cases_burst.py`: the Temp drop burst summary (rule 100500).
+- `guard_cases_docker.py`: the Docker health check rule (100247).
+- `guard_cases_edge.py`: Edge component unpacks in Temp (rule 100222).
+
+Each file runs inside a throwaway manager with the rules loaded, next to `replay.py`.
 
 Rules follow these conventions: level 0 is pure telemetry or a fully identified benign pattern and ends processing; level 1 is stored and indexed but easy to filter with `rule.level >= 3`; level 3 is a security-relevant event from a trusted admin-only path, kept for audit but below the Home Assistant threshold (level 10). Scope every rule by full image path, command line or target path, and never silence a stock rule outright unless it is pure telemetry.
