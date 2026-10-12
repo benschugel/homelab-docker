@@ -35,6 +35,7 @@ services:
       - media:/usr/src/paperless/media
       - ./export:/usr/src/paperless/export
       - ./consume:/usr/src/paperless/consume
+      - ./scripts:/usr/src/paperless/scripts
 
   # Gotenberg + Tika handle Office docs and .eml files.
   # Remove both (and the TIKA lines in paperless.env) if you only scan PDFs/images.
