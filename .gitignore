@@ -66,3 +66,6 @@ Thumbs.db
 
 # Live manager config: holds the Home Assistant webhook URL. Copy from the .example.
 wazuh/config/wazuh_cluster/wazuh_manager.conf
+
+# Microsoft-licensed reference fonts used by the ToUnicode repair script; do not redistribute
+**/scripts/fonts/
