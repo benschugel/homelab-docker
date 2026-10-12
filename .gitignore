@@ -69,3 +69,4 @@ wazuh/config/wazuh_cluster/wazuh_manager.conf
 
 # Microsoft-licensed reference fonts used by the ToUnicode repair script; do not redistribute
 **/scripts/fonts/
+*.bak-*
