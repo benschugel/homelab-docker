@@ -169,10 +169,10 @@
 
   <rule id="100222" level="3">
     <if_sid>92213</if_sid>
-    <field name="win.eventdata.image" type="pcre2">(?i)^C:\\\\Program Files \(x86\)\\\\Microsoft\\\\EdgeWebView\\\\Application\\\\[\d.]+\\\\msedgewebview2\.exe$</field>
+    <field name="win.eventdata.image" type="pcre2">(?i)^C:\\\\Program Files \(x86\)\\\\Microsoft\\\\(EdgeWebView\\\\Application\\\\[\d.]+\\\\msedgewebview2|Edge\\\\Application\\\\msedge)\.exe$</field>
     <field name="win.eventdata.targetFilename" type="pcre2">(?i)\\\\AppData\\\\Local\\\\Temp\\\\msedge_chrome_Unpacker_BeginUnzipping\d+_\d+\\\\</field>
     <options>no_full_log</options>
-    <description>Edge WebView2 component update unpacked in Temp</description>
+    <description>Edge or Edge WebView2 component update unpacked in Temp</description>
   </rule>
 
   <rule id="100223" level="3">
