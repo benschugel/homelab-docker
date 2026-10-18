@@ -1,13 +1,26 @@
 # Wazuh single node
 
-Wazuh 4.14.8 SIEM (manager, indexer, dashboard) on Docker Desktop for Windows. State lives in named volumes under the `single-node` project name; this folder holds the compose file, mounted config, and the custom detection content that gets copied into the manager.
+Wazuh 4.14.8 SIEM (manager, indexer, dashboard) on Docker Desktop for Windows. State lives in named volumes under the `single-node` project name; this folder holds the compose file, mounted config, the shared agent config and the two scripts that run on the manager.
 
-## What's custom
+## Detection content
 
-- `unifi_decoder.xml`, `unifi_rules.xml`: decoder and rules for UniFi gateway syslog.
-- `local_tuning_rules.xml`: noise reduction and overrides for Sysmon and the home LAN.
+The UniFi decoder, the detection and tuning rules, the Sysmon configuration the agents run, and their test suite live in [wazuh-detections](https://github.com/benschugel/wazuh-detections) (checkout `C:\Users\schug\src\wazuh-detections`). That repository is the source of truth; nothing under this folder carries rules any more.
+
+Deploy from that checkout into the running manager:
+
+```
+cd C:\Users\schug\src\wazuh-detections
+./deploy.sh --dry-run
+./deploy.sh
+```
+
+The rules sit in the `wazuh_etc` named volume, so they survive restarts but not `docker compose down -v`; run `deploy.sh` again after that or after an image upgrade. The deployed commit is in `/var/ossec/etc/wazuh-detections.version` inside the container.
+
+## What's custom here
+
 - `custom-homeassistant.py`: integration script that forwards alerts at or above a level threshold to a Home Assistant webhook, with group filtering, cooldown and burst protection. Copy of [wazuh-homeassistant](https://github.com/benschugel/wazuh-homeassistant), which also has the Home Assistant package and tests.
-- `DockerListener.py`: Wazuh's Docker event listener wodle, kept here so it can be dropped back into the manager after an upgrade.
+- `DockerListener.py`: Wazuh's Docker event listener wodle, patched to split multi-event chunks (the stock copy crashed on "Extra data" every few minutes). Copy it back to `/var/ossec/wodles/docker/DockerListener.py` (`root:wazuh`, mode 750) after an image upgrade.
+- `agent.conf`: shared config for the `default` agent group, see below.
 - `docker-compose.yml`: upstream single-node compose with passwords moved to `.env`.
 
 ## Files that stay local
@@ -30,62 +43,24 @@ docker compose up -d
 
 First start takes a minute or two while the indexer initializes. Dashboard is at https://localhost (port 443), API at https://localhost:55000.
 
-## Attribution
+## Manager config quirks
 
-`docker-compose.yml`, `generate-indexer-certs.yml`, everything under `config/`, and `DockerListener.py` are adapted from [wazuh/wazuh-docker](https://github.com/wazuh/wazuh-docker) and remain under that project's GPLv2 license. The custom rules, decoder, tuning, and Home Assistant integration are mine and are covered by this repository's license.
+- `config/wazuh_cluster/wazuh_manager.conf` is only copied into the container on its first start. A restart does not re-copy it, so config edits must also be applied to `/var/ossec/etc/ossec.conf` inside the container (then `wazuh-control restart`).
+- The live `ossec.conf` carries a VirusTotal integration block with an API key that the host file does not. Recreating the container would drop it; reconcile the host file first.
+- `log_alert_level` is 1 since 2026-10-07, so level 1 and 2 alerts are stored and indexed. Home Assistant is notified at level 10 and above.
+- Since 2026-10-08 the VirusTotal block triggers on `<rule_id>550,554</rule_id>` instead of `<group>syscheck</group>` (registry changes were burning the API quota), and the manager's own `<sca>` block is `<enabled>no</enabled>` in the live config, the host config and the tracked example.
+- Since 2026-10-09 the `<ruleset>` block declares the three `etc/lists/malicious-ioc/*` lists that the stock image config has and the host config lacked. Without them rules 99901 to 99920 were skipped at every start with a "could not be loaded" warning.
+- The Windows agents' client buffer is raised in `agent.conf` because the default queue of 5000 events overflowed every time the manager restarted.
 
 ## Shared agent config
 
 `agent.conf` is the centralized config for the `default` agent group
 (`/var/ossec/etc/shared/default/agent.conf` in the manager). It holds the
-Windows client buffer size and the Downloads FIM path. After copying it in, run
-`/var/ossec/bin/verify-agent-conf` inside the container.
+Windows client buffer size, the Downloads FIM path, the Claude Desktop config
+FIM entries with `report_changes` (tuning rule 100262 in wazuh-detections keeps
+those modifications at level 3), and the W32Time registry ignores. After
+copying it in, run `/var/ossec/bin/verify-agent-conf` inside the container.
 
-## Sysmon config
+## Attribution
 
-`sysmon/sysmonconfig.xml` is the unmodified SwiftOnSecurity
-[sysmon-config](https://github.com/SwiftOnSecurity/sysmon-config) (source
-version 74, 2021-07-08, schema 4.50). Both Windows agents run it from
-`C:\Sysmon\sysmonconfig.xml`. Its SHA256 is
-`055FEBC600E6D7448CDF3812307275912927A62B1F94D0D933B64B294BC87162`, which is
-also the "Config hash" that `Sysmon64.exe -c` prints when the active config
-matches this file.
-
-Check a machine (elevated PowerShell):
-
-```
-(Get-ItemProperty HKLM:\SYSTEM\CurrentControlSet\Services\SysmonDrv\Parameters).ConfigHash
-```
-
-Apply it (elevated, no reboot needed):
-
-```
-C:\Windows\Sysmon64.exe -c C:\Sysmon\sysmonconfig.xml
-```
-
-Known weak spot: a driver install writes tens of thousands of registry values
-that the config's include list catches (`\FriendlyName`, `\DriverVersion`,
-`\Start`, `\ImagePath`). On 2026-10-08 the laptop's Intel graphics update
-overflowed the Sysmon driver queue (event 255, about 41,000 registry events
-dropped) and the process events that survived came through with an all-zero
-parent GUID; Wazuh rules 100252 and 100253 handle that fallout. Any change to
-this file changes the hash, so update this section and re-apply on both
-machines together.
-
-## Tests
-
-`tests/` holds the rule test harness from the tuning work:
-
-- `replay.py`: replays recorded alerts through `wazuh-logtest` and prints which rule each one hits now.
-- `guard_cases.py`: synthetic events that must keep alerting after tuning.
-- `guard_cases_medium.py`: the level 7 to 11 tuning (rules 100230 to 100234).
-- `guard_cases_oct8.py`: the 2026-10-08 triage (rules 100240 to 100243, including UniFi gateway blocks).
-- `guard_cases_oct8b.py`: the 2026-10-08 evening level 10 triage (rules 100244 and 100245).
-- `guard_cases_laptop.py`: the 2026-10-09 laptop triage (rules 100250 to 100261).
-- `guard_cases_burst.py`: the Temp drop burst summary (rule 100500).
-- `guard_cases_docker.py`: the Docker health check rule (100247).
-- `guard_cases_edge.py`: Edge component unpacks in Temp (rule 100222).
-
-Each file runs inside a throwaway manager with the rules loaded, next to `replay.py`.
-
-Rules follow these conventions: level 0 is pure telemetry or a fully identified benign pattern and ends processing; level 1 is stored and indexed but easy to filter with `rule.level >= 3`; level 3 is a security-relevant event from a trusted admin-only path, kept for audit but below the Home Assistant threshold (level 10). Scope every rule by full image path, command line or target path, and never silence a stock rule outright unless it is pure telemetry.
+`docker-compose.yml`, `generate-indexer-certs.yml`, everything under `config/`, and `DockerListener.py` are adapted from [wazuh/wazuh-docker](https://github.com/wazuh/wazuh-docker) and remain under that project's GPLv2 license. The Home Assistant integration is mine and is covered by this repository's license.
