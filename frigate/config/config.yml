@@ -200,6 +200,9 @@ lpr:
   min_area: 100
   debug_save_plates: true
   known_plates:
+    "Mom's Car":
+      - REDACTED
+      - REDACTED
     My Car:
       - REDACTED
       - REDACTED
