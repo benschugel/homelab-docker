@@ -2,7 +2,7 @@
 # read access plus active response, and generates .env.write (keep it out of git)
 # holding that user's credentials and the write-mode MCP settings.
 # The HA instance (wazuh-mcp-ha) never loads .env.write, so it stays read-only.
-# Run from C:\docker\wazuh-mcp while the Wazuh stack is up:  .\create-mcp-write-user.ps1
+# Run from C:\Users\schug\src\docker\wazuh-mcp while the Wazuh stack is up:  .\create-mcp-write-user.ps1
 # Safe to re-run: reuses the password in .env.write and skips anything that already exists.
 $ErrorActionPreference = "Stop"
 $api     = "https://localhost:55000"

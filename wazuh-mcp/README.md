@@ -1,6 +1,6 @@
 # wazuh-mcp
 
-Two Wazuh MCP Server containers attached to the Wazuh stack in `C:\docker\wazuh` (Compose project `single-node`):
+Two Wazuh MCP Server containers attached to the Wazuh stack in `C:\Users\schug\src\docker\wazuh` (Compose project `single-node`):
 
 - `wazuh-mcp`: for Claude Code. Bound to 127.0.0.1:3000, bearer-token auth, and active response through the `mcp-write` API user.
 - `wazuh-mcp-ha`: for Home Assistant's MCP client, which can't send a bearer token. Authless and read-only, published on the desktop's LAN address port 3001, with Windows Firewall and UniFi rules limiting it to the HA host.
