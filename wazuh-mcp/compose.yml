@@ -76,8 +76,8 @@ services:
       AUTHLESS_ALLOW_WRITE: "false"
 
     ports:
-      # LAN IP only; Windows Firewall and UniFi limit it to the HA Green.
-      - "192.0.2.10:3001:3000"
+      # LAN IP only (MCP_HA_BIND_IP in .env); Windows Firewall and UniFi limit it to the HA Green.
+      - "${MCP_HA_BIND_IP:?set MCP_HA_BIND_IP in .env}:3001:3000"
 
     networks:
       - wazuh

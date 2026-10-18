@@ -146,6 +146,8 @@ UNIFI = [
     ("Phone to external DoT stays level 5",
      block("192.0.2.91", 853, dst_zone="External", policy="Block DoT Trusted"), "100101", 5),
     ("Other Trusted client to gateway port 80 stays level 5", block("192.0.2.236", 80, alias="Other"), "100101", 5),
+    ("Phone address with another alias stays level 5 (rule keys on alias)", block("192.0.2.91", 80, alias="Other"), "100101", 5),
+    ("Phone on a new DHCP lease is still level 2", block("192.0.2.200", 80), "100242", 2),
     ("Work client to gateway port 80 stays level 5",
      block("192.0.2.47", 80, src_zone="Work", policy="Work to Gateway Mgmt Block", alias="Work-PC"), "100101", 5),
 ]

@@ -12,3 +12,13 @@ Secrets and generated state stay local and gitignored; every stack ships a `.env
 | paperless/ | Paperless-ngx with Postgres, Redis, Gotenberg, and Tika for document management, plus a nightly encrypted export script for Task Scheduler. |
 
 Not included: TLS certs, internal_users.yml, databases, media, model caches, tokens.
+
+## After cloning
+
+`frigate/config/config.yml` is tracked with its `known_plates` values redacted by a git clean filter. The filter is declared in `.gitattributes` but lives in local git config, so register it once per clone or the next commit will carry the real plates:
+
+```
+git config filter.redact-plates.clean "sed -E '/^  known_plates:/,/^  [a-z_]+:/ s/^( +- ).*/\1REDACTED/'"
+git config filter.redact-plates.smudge cat
+git config filter.redact-plates.required true
+```

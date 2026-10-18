@@ -1,6 +1,6 @@
 mqtt:
   enabled: true
-  host: 192.0.2.5
+  host: '{FRIGATE_MQTT_HOST}'
   port: 1883
   user: frigatemqtt
   password: '{FRIGATE_MQTT_PASSWORD}'
@@ -17,19 +17,19 @@ go2rtc:
     password: '{FRIGATE_RTSP_PASSWORD}'
   webrtc:
     candidates:
-      - 192.0.2.10:8555
+      - '{FRIGATE_LAN_IP}:8555'
       - stun:8555
   streams:
     driveway:
-      - rtsp://frigate:{FRIGATE_DRIVEWAY_PASSWORD}@192.0.2.12:554/Preview_01_main#media=video
+      - rtsp://frigate:{FRIGATE_DRIVEWAY_PASSWORD}@{FRIGATE_DRIVEWAY_HOST}:554/Preview_01_main#media=video
       - ffmpeg:driveway_sub#audio=aac
       - ffmpeg:driveway_sub#audio=opus
     driveway_sub:
-      - rtsp://frigate:{FRIGATE_DRIVEWAY_PASSWORD}@192.0.2.12:554/Preview_01_sub
+      - rtsp://frigate:{FRIGATE_DRIVEWAY_PASSWORD}@{FRIGATE_DRIVEWAY_HOST}:554/Preview_01_sub
     driveway_audio:
       - ffmpeg:driveway_sub#video=copy#audio=aac
     litter:
-      - ffmpeg:rtsps://{FRIGATE_LITTER_USER}:{FRIGATE_LITTER_PASSWORD}@192.0.2.137:322/stream0#video=copy#audio=aac
+      - ffmpeg:rtsps://{FRIGATE_LITTER_USER}:{FRIGATE_LITTER_PASSWORD}@{FRIGATE_LITTER_HOST}:322/stream0#video=copy#audio=aac
 
 cameras:
   driveway:
