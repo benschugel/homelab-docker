@@ -77,6 +77,10 @@ cameras:
         inertia: 3
         loitering_time: 0
         friendly_name: Driveway_Zone
+        # Only cars count as being in the driveway zone, so driveway alerts are car-only.
+        # Every other alert label has to be in front_yard to trigger an alert.
+        objects:
+          - car
       front_yard:
         coordinates: 
           0,0.617,0,1,0.86,1,0.886,0.794,0.888,0.624,0.877,0.462,0.381,0.249,0.2,0.394,0.08,0.519
