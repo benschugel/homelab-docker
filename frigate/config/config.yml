@@ -204,7 +204,7 @@ lpr:
   min_area: 100
   debug_save_plates: true
   known_plates:
-    "Mom's Car":
+    Mom's Car:
       - REDACTED
       - REDACTED
     My Car:
@@ -328,4 +328,4 @@ detectors:
     device: Tensorrt
 
 model:
-  path: plus://89bc6353ce483d1628fb9a8ca35056cd
+  path: plus://c15bb779e2c36ad4926328192388d002
