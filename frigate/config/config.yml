@@ -325,7 +325,6 @@ ui:
 detectors:
   onnx:
     type: onnx
-    device: Tensorrt
 
 model:
   path: plus://c15bb779e2c36ad4926328192388d002
