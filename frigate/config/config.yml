@@ -97,6 +97,8 @@ cameras:
           threshold: 0.82
           min_score: 0.6
           max_area: 0.1
+        car:
+          mask: {}
   driveway_audio:
     enabled: true
     ui:
@@ -147,6 +149,12 @@ cameras:
       crop: false
       height: 720
       quality: 90
+    review:
+      alerts:
+        labels:
+          - cat
+        required_zones:
+          - litter_box
     objects:
       track:
         - cat
@@ -171,6 +179,14 @@ cameras:
           friendly_name: Timestamp
           enabled: true
           coordinates: 0.72,0.932,0.72,0.989,0.976,0.985,0.976,0.931
+    zones:
+      litter_box:
+        coordinates: 
+          0,0.319,0.033,0.569,0.111,0.754,0.214,0.888,0.463,0.951,0.797,0.851,0.959,0.542,0.956,0.269,0.912,0,0.685,0,0.077,0
+        enabled: true
+        inertia: 3
+        loitering_time: 0
+        friendly_name: Litter Box
 record:
   enabled: true
   alerts:
