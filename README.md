@@ -9,6 +9,8 @@ Secrets and generated state stay local and gitignored; every stack ships a `.env
 | wazuh/ | Wazuh 4.14 single-node SIEM with a Home Assistant webhook integration and a patched Docker event listener. The UniFi decoder, detection and tuning rules, Sysmon configuration and their tests live in [wazuh-detections](https://github.com/benschugel/wazuh-detections). |
 | wazuh-mcp/ | Wazuh MCP server in two hardened containers (read-only FS, dropped caps): a loopback-only instance for Claude Code with active response through its own API user, and an authless, read-only instance for Home Assistant, firewalled to the HA host. |
 | frigate/ | Frigate NVR with a custom TensorRT build for NVIDIA GPU detection and a Dockerfile that exports YOLOv9 to ONNX. Camera credentials come from env substitution. |
+| uptime-kuma/ | Uptime Kuma status page and alerting for the stacks here and the rest of the LAN. |
+| watchtower/ | Nightly image updates for opt-in containers (label-enable mode, so Frigate's local build and the pinned Wazuh stack are never touched), with a heartbeat push to Uptime Kuma after every scan. |
 | paperless/ | Paperless-ngx with Postgres, Redis, Gotenberg, and Tika for document management, plus a nightly encrypted export script for Task Scheduler. |
 
 Not included: TLS certs, internal_users.yml, databases, media, model caches, tokens.
