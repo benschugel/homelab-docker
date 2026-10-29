@@ -2,6 +2,7 @@
 # Data lives in named volumes (Postgres is unreliable on Windows bind mounts).
 # consume\ and export\ are bind mounts (gitignored) so you can see them in Explorer.
 # The project name is pinned so the volumes stay attached if this folder ever moves.
+# Services labeled watchtower.enable are updated nightly by the watchtower stack.
 
 name: paperless
 
@@ -9,12 +10,16 @@ services:
   broker:
     image: docker.io/library/redis:8
     restart: unless-stopped
+    labels:
+      com.centurylinklabs.watchtower.enable: "true"
     volumes:
       - redisdata:/data
 
   db:
     image: docker.io/library/postgres:17
     restart: unless-stopped
+    labels:
+      com.centurylinklabs.watchtower.enable: "true"
     env_file: paperless.env
     volumes:
       - pgdata:/var/lib/postgresql/data
@@ -22,6 +27,8 @@ services:
   webserver:
     image: ghcr.io/paperless-ngx/paperless-ngx:latest
     restart: unless-stopped
+    labels:
+      com.centurylinklabs.watchtower.enable: "true"
     depends_on:
       - db
       - broker
@@ -42,12 +49,15 @@ services:
   gotenberg:
     image: docker.io/gotenberg/gotenberg:8
     restart: unless-stopped
+    labels:
+      com.centurylinklabs.watchtower.enable: "true"
     command:
       - "gotenberg"
       - "--chromium-disable-javascript=true"
       - "--chromium-allow-list=file:///tmp/.*"
 
   # Pinned to 3.x: Tika 4.x renamed its metadata keys and breaks Paperless .eml parsing.
+  # Not labeled for Watchtower: the pin is deliberate.
   tika:
     image: docker.io/apache/tika:3.3.1.0
     restart: unless-stopped
