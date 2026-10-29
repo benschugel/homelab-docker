@@ -1,0 +1,57 @@
+# Watchtower (nickfedor fork; containrrr/watchtower was archived in Dec 2025).
+# Opt-in mode: only containers labeled com.centurylinklabs.watchtower.enable=true
+# are updated. Frigate (local build), Wazuh and wazuh-mcp (pinned versions) are
+# left alone on purpose. After every nightly scan it pushes a heartbeat to the
+# Uptime Kuma push monitor, so Kuma goes DOWN if scans stop happening.
+
+name: watchtower
+
+services:
+  watchtower:
+    image: nickfedor/watchtower:1
+    container_name: watchtower
+    restart: unless-stopped
+
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+
+    environment:
+      TZ: "America/Chicago"
+      WATCHTOWER_SCHEDULE: "0 0 4 * * *"      # daily at 04:00 local
+      WATCHTOWER_LABEL_ENABLE: "true"          # opt-in via label only
+      WATCHTOWER_CLEANUP: "true"               # remove old images after update
+      WATCHTOWER_TIMEOUT: "60s"                # stop timeout; Postgres needs more than the 10s default
+      WATCHTOWER_NOTIFICATION_REPORT: "true"
+      WATCHTOWER_NOTIFICATIONS_LEVEL: "info"
+      # Heartbeat to Uptime Kuma. Query params that shoutrrr does not consume are
+      # forwarded to the target URL, so status/msg reach Kuma's push endpoint.
+      # Kuma ignores the request body (the Watchtower session report).
+      WATCHTOWER_NOTIFICATION_URL: "generic+http://uptime-kuma:3001/api/push/${KUMA_PUSH_TOKEN}?status=up&msg=watchtower+scan+ok"
+
+    labels:
+      # Lets Watchtower update itself.
+      com.centurylinklabs.watchtower.enable: "true"
+
+    networks:
+      - kuma
+
+    security_opt:
+      - no-new-privileges:true
+
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 256M
+
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+networks:
+  # Joins the Uptime Kuma stack's network so the push goes container-to-container.
+  kuma:
+    external: true
+    name: uptime-kuma_default
