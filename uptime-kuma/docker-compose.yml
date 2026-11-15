@@ -10,6 +10,17 @@ services:
       - "3002:3001"
     volumes:
       - uptime-kuma-data:/app/data
+    networks:
+      - default
+      - frigate
 
 volumes:
   uptime-kuma-data:
+
+networks:
+  # Joins the Frigate stack's network so the stream monitors can query
+  # http://frigate:5000/api/stats (unauthenticated, never published to the host).
+  # Frigate must be up (network created) before this stack starts.
+  frigate:
+    external: true
+    name: frigate_default
